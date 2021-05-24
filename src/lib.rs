@@ -174,3 +174,212 @@ pub fn solve_dblchoco(url: &str) -> String {
   https://puzz.link/p?dbchoco/12/12/7orhfgfc3i1ugsce2v0jgds3t3m7o2g1i3j2i3h51g1g3o5o5g6h4i3k61h4h32k2h3n4j3g7g6g2h4w5j7h23g3g35g3p3
   https://puzz.link/p?dbchoco/8/8/0c5hu1vlvn4hgm45h6h5p6g5o6p5i5g5i5j2
 */
+
+
+#[derive(Serialize, Deserialize, Debug)]
+struct NumlinField {
+  field: Vec<i32>,
+  width: usize, 
+  height: usize
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct NumlinSol {
+  sol: Vec<Vec<Vec<usize>>>
+}
+
+#[wasm_bindgen]
+pub fn parse_url_numlin(url: String) -> String {
+  let opt = parse_url_numlin_internal(url);
+
+  if let Some(clue) = opt {
+    let width = clue.width() as usize;
+    let height = clue.height() as usize;
+
+    let mut clue_vec = vec![];
+
+    for i in 0..width*height {
+      match clue[i] {
+        numberlink::Clue(x) => clue_vec.push(x),
+        _ => {}
+      }
+    }
+
+    let payload = NumlinField {
+      field: clue_vec,
+      width: width, 
+      height: height
+    };
+
+    return serde_json::to_string(&payload).unwrap();
+  } else {
+
+    return "".to_string();
+  }
+}
+
+#[wasm_bindgen]
+pub fn solve_numlin(url: String) -> String {
+  let opt = parse_url_numlin_internal(url);
+
+  if let Some(clue) = opt {
+    let ans = numberlink::solve2(&clue, None, false, false);
+    let lines = ans.answers;
+
+    let mut sol_vec: Vec<Vec<Vec<usize>>> = vec![];
+
+    for line in &lines {
+      let width = line.width() as usize;
+      let height = line.height() as usize;
+
+      for i in 0..height*(width-1) {
+        let row = i/(width-1);
+        let col = i%(width-1);
+
+        if line.right(P(row as i32, col as i32)) {
+          sol_vec.push(vec![vec![row, col], vec![row, col+1]]);
+        }
+      }
+
+      for i in 0..width*(height-1) {
+        let col = i/(height-1);
+        let row = i%(height-1);
+
+        if line.down(P(row as i32, col as i32)) {
+          sol_vec.push(vec![vec![row, col], vec![row+1, col]]);
+        }
+      }
+    }
+
+    let payload = NumlinSol {
+      sol: sol_vec,
+    };
+
+    return serde_json::to_string(&payload).unwrap();
+  } else {
+    return "".to_string();
+  }
+}
+
+fn parse_url_numlin_internal(url: String) -> Option<Grid<numberlink::Clue>> {
+  let splitter = '/';
+  let params: Vec<String> = url.split(splitter).map(|s| s.to_string()).collect();
+  let length = params.len();
+
+  if length < 3 {
+      return None;
+  }
+
+  let width = params[length-3].parse().unwrap_or(0);
+  let height = params[length-2].parse().unwrap_or(0);
+
+  if width <= 0 || height <= 0 {
+      return None;
+  }
+
+  let field_code = params[length-1].clone();
+
+  if !is_valid_code(&field_code) {
+      return None;
+  }
+
+  decode_field(width, height, field_code)
+}
+
+fn is_valid_code(code: &String) -> bool {
+  return code.chars().all(|ch| char::is_alphanumeric(ch) || ch == '-');
+}
+
+fn decode_field(width: usize, height: usize, code: String) -> Option<Grid<numberlink::Clue>> {
+  let list: &Vec<char> = &code.chars().collect();
+  let mut index: usize = 0;
+  let mut i: usize = 0;
+  let mut j: usize = 0;
+
+  let mut res: Vec<Vec<usize>> = vec![vec![0; width as usize]; height as usize];
+
+  while index < list.len() {
+      while let Some(num) = get_num(&mut index, list) {
+          res[i as usize][j as usize] = num;
+
+          j += 1;
+
+          if j >= width {
+              j = 0;
+              i += 1;
+          }
+
+          if index >= list.len() {
+              break;
+          }
+      }
+
+      consume(&mut index, &mut i, &mut j, width, list);
+  }
+
+  let mut clue = Grid::new(height as i32, width as i32, numberlink::Clue(0));
+
+  for i in 0..height {
+    for j in 0..width {
+      clue[i*width+j] = numberlink::Clue(res[i][j] as i32);
+    }
+  }
+
+  Some(clue)
+}
+
+fn get_num(index: &mut usize, list: &Vec<char>) -> Option<usize> {
+  let ch = list[*index as usize];
+
+  if ch == '-' {
+      *index += 1;
+      let mut res = 0;
+
+      while res*16 < 100 && *index < list.len() && list[*index].is_digit(16) {
+          res *= 16;
+          res += list[*index].to_digit(16).unwrap();
+          *index += 1;
+      }
+
+      return Some(res as usize);
+  } else if ch.is_digit(16) {
+      *index += 1;
+
+      return match ch.to_digit(16) {
+          Some(num) => Some(num as usize),
+          None => None,
+      };
+  } else {
+      return None;
+  }
+}
+
+fn consume(index: &mut usize, i: &mut usize, j: &mut usize, width: usize, list: &Vec<char>) {
+  let length = list.len();
+
+  while *index < length && !(list[*index as usize]).is_digit(16) {
+      let ch = list[*index as usize];
+      let value = (ch as i32) - ('f' as i32);
+
+      if value <= 0 {
+          return;
+      }
+
+      let value: usize = value as usize;
+
+      *j += value;
+
+      if *j >= width {
+          *i += *j/width;
+          *j %= width;
+      }
+
+      *index += 1;
+  }    
+}
+
+fn main() {
+  let url = "https://puzz.link/p?numlin/42/25/zzi1zx5j3ve-1cv-13n6zp-2br2zl-2cvep8-1dp-29z-10x7zj-14t-1dzn-16j-1abj-20zr-19l-21zv-1bh-1fzg2h6hbh-11hch-17l-22h-24h-27h-2ah-24h-1cj3h7hch-12h-16h-1al-14h-21h-23h-29h-26h-2cj4h8hdh9h-17h-12l-1fh-25h-28h-2bh-27h-10zgah-20zv-1bl-23zr-18j-18fj-22zn-15t-26zj-13x-25zfp-15-19p-11vazl4r9zp-2an5vd-1ev-1ej1zx-28zzi".to_string();
+
+  parse_url_numlin(url);
+}

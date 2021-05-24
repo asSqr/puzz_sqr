@@ -24,7 +24,7 @@ const R = {
   },
 };
 
-Promise.all([wasm]).then(async function([{ parse_url_dblchoco, solve_dblchoco }]) {
+Promise.all([wasm]).then(async function([{ parse_url_dblchoco, solve_dblchoco, parse_url_numlin, solve_numlin }]) {
   const button = document.getElementById('button');
 
   button.innerText = 'Solve it!!!';
@@ -34,6 +34,9 @@ Promise.all([wasm]).then(async function([{ parse_url_dblchoco, solve_dblchoco }]
     
     const url = input.value;
 
+    const col_main = 'rgb(40,40,40)';
+    const col_sol = 'rgb(0,160,0)';
+
     if( url.indexOf('dbchoco') != -1 ) {
       const { color, clue, width, height } = JSON.parse(parse_url_dblchoco(url));
       const sol = solve_dblchoco(url);
@@ -42,10 +45,8 @@ Promise.all([wasm]).then(async function([{ parse_url_dblchoco, solve_dblchoco }]
 
       console.log(sol);
 
-      const col_main = 'rgb(40,40,40)';
       const col_black = 'rgb(204,204,204)';
       const col_white = 'rgb(255,255,255)';
-      const col_sol = 'rgb(0,160,0)';
 
       const canvas = document.getElementById('canvas');
       const ctx = canvas.getContext('2d');
@@ -95,7 +96,6 @@ Promise.all([wasm]).then(async function([{ parse_url_dblchoco, solve_dblchoco }]
 
         const x = pad + s*j;
 
-        
         R.line(ctx, x, pad, x, pad + s*height);
 
         ctx.setLineDash([]);
@@ -133,7 +133,8 @@ Promise.all([wasm]).then(async function([{ parse_url_dblchoco, solve_dblchoco }]
         }
       }
     } else if( url.indexOf('numlin') != -1 ) {
-      /*const sol = JSON.parse(solve_numberlink(url));
+      const { field, width, height } = JSON.parse(parse_url_numlin(url));
+      const { sol } = JSON.parse(solve_numlin(url));
     
       console.log(field);
     
@@ -147,9 +148,6 @@ Promise.all([wasm]).then(async function([{ parse_url_dblchoco, solve_dblchoco }]
     
       const canvas = document.getElementById('canvas');
       const ctx = canvas.getContext('2d');
-    
-      const width = field[0].length;
-      const height = field.length;
     
       const pad = 20;
       const scrW = 640, scrH = 480;
@@ -165,27 +163,54 @@ Promise.all([wasm]).then(async function([{ parse_url_dblchoco, solve_dblchoco }]
         ctx.strokeStyle = 'rgb(40,40,40)';
         ctx.lineWidth = 2;
     
-        ctx.strokeRect(x, y, s, s);
-    
-        if( field[i][j] != 0 ) {
+        if( field[i*width+j] != 0 ) {
           const rat = s/40;
           ctx.font = `normal ${Math.floor(30*rat)}px 'Yu Gothic'`;
 
-          if( field[i][j] < 10 )
-            R.string(ctx, x+s/2-8*rat, y+s/2+12*rat, field[i][j] );
+          if( field[i*width+j] < 10 )
+            R.string(ctx, x+s/2-8*rat, y+s/2+12*rat, field[i*width+j] );
           else
-            R.string(ctx, x+s/2-17*rat, y+s/2+12*rat, field[i][j] );
+            R.string(ctx, x+s/2-17*rat, y+s/2+12*rat, field[i*width+j] );
         }
+      }
+
+      for( let i = 0; i <= height; ++i ) {
+        ctx.setLineDash(!i || i == height ? [] : [12]);
+        ctx.strokeStyle = col_main;
+        ctx.lineWidth = !i || i == height ? 3 : 1;  
+
+        const y = pad + s*i;
+
+        R.line(ctx, pad, y, pad + s*width, y);
+
+        ctx.setLineDash([]);
+      }
+
+      for( let j = 0; j <= width; ++j ) {
+        ctx.setLineDash(!j || j == width ? [] : [12]);
+        ctx.strokeStyle = col_main;  
+        ctx.lineWidth = !j || j == width ? 3 : 1;  
+
+        const x = pad + s*j;
+        
+        R.line(ctx, x, pad, x, pad + s*height);
+
+        ctx.setLineDash([]);
       }
     
       const calc = i => pad + s*i + s/2;
     
       for( const arc of sol ) {
-        ctx.strokeStyle = `rgb(40,40,40)`;
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = col_sol;
+        ctx.lineWidth = 4;
 
-        R.line( ctx, calc(arc[0][1]), calc(arc[0][0]), calc(arc[1][1]), calc(arc[1][0]) );
-      }*/
+        const ver = arc[1][0]-arc[0][0];
+        const hor = arc[1][1]-arc[0][1];
+        const mar1 = field[arc[0][0]*width+arc[0][1]] > 0 ? s/8*3 : 0;
+        const mar2 = field[arc[1][0]*width+arc[1][1]] > 0 ? s/8*3 : 0;
+
+        R.line( ctx, calc(arc[0][1]) + hor*mar1, calc(arc[0][0]) + ver*mar1, calc(arc[1][1]) - hor*mar2, calc(arc[1][0]) - ver*mar2 );
+      }
     } 
   }
 });

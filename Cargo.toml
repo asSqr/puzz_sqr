@@ -1,7 +1,7 @@
 [package]
-name = "numberlink_solver"
+name = "puzz_sqr"
 version = "0.1.0"
-authors = ["PACKAGE AUTHOR <package_author@example.com>"]
+authors = ["As_sqr <utas.square@gmail.com>"]
 edition = "2018"
 
 [lib]
@@ -54,3 +54,7 @@ opt-level = 3
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = false
+
+[[bin]]
+name = "main"
+path = "src/lib.rs"
