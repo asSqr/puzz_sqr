@@ -23,7 +23,9 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 #[derive(Serialize, Deserialize, Debug)]
 struct DblchocoField {
   color: Vec<bool>,
-  clue: Vec<i32>
+  clue: Vec<i32>,
+  width: usize,
+  height: usize
 }
 
 fn parse_url_dblchoco_internal(url: &str) -> (Grid<Color>, Grid<Clue>) {
@@ -112,7 +114,9 @@ pub fn parse_url_dblchoco(url: &str) -> String {
 
   let payload = DblchocoField {
     color: color_fls,
-    clue: clue_vec
+    clue: clue_vec,
+    width: width,
+    height: height
   };
 
   serde_json::to_string(&payload).unwrap()
