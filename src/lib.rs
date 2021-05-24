@@ -169,10 +169,16 @@ pub fn solve_dblchoco(url: &str) -> String {
 
 /*
   https://puzz.link/p?dbchoco/6/6/vj801ovgk4r4g4l2h3j2
-  でかい
+  
+  でかい:
   https://puzz.link/p?dbchoco/16/16/vf9cnls83q419uuv0pgaocl06um0fb1i0pgfnnuo2055f6ulr9bgh41g2j2k3r3g3k2g22g2q5h5i1l5l5l2k5j4i2g5n51m5o4p5j4g2g5n51j2j5k4l5l5k1g1h5h5j2l2j2i1n11o32p3g
+  
   https://puzz.link/p?dbchoco/12/12/7orhfgfc3i1ugsce2v0jgds3t3m7o2g1i3j2i3h51g1g3o5o5g6h4i3k61h4h32k2h3n4j3g7g6g2h4w5j7h23g3g35g3p3
   https://puzz.link/p?dbchoco/8/8/0c5hu1vlvn4hgm45h6h5p6g5o6p5i5g5i5j2
+
+  こける:
+  https://puzz.link/p?dbchoco/6/6/poc4f1tgj6zl3h3g
+
 */
 
 
