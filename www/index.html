@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>puzz_sqr</title>
+    <style>
+      .container {
+        width: 640px;
+        height: 480px;
+        margin: 20;
+      }
+      #url-box {
+        top: 20;
+      }
+      #button {
+        top: 20;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="./bootstrap.js"></script>
+    <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
+    <p>
+      とりあえずナンバーリンクとダブルチョコを解きます．めっちゃ問題が大きいと落ちます．<br />
+      ソルバーは semiexp さんのものを MIT License に基づき使用させていただきました．問題があれば教えてください．
+    </p>
+    <label>ぱずぷれ URL を入力してください: </label>
+    <input id="url-box" type="text"/>
+    <button id="button" onclick="click_handler()">Loading...</button>
+    <div class="container">
+      <canvas id="canvas" width="640" height="480"></canvas>
+    </div>
+  </body>
+</html>
