@@ -28,6 +28,12 @@ struct DblchocoField {
   height: usize
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct DblchocoSol {
+  sol: String,
+  decided_flag: bool
+}
+
 fn parse_url_dblchoco_internal(url: &str) -> (Grid<Color>, Grid<Clue>) {
     let tokens = url.split("/").collect::<Vec<_>>();
     let width = tokens[tokens.len() - 3].parse::<i32>().unwrap();
@@ -123,16 +129,16 @@ pub fn parse_url_dblchoco(url: &str) -> String {
 }
 
 #[wasm_bindgen]
-pub fn solve_dblchoco(url: &str) -> String {
+pub fn solve_dblchoco(url: &str, depth: i32) -> String {
   let (color, clue) = parse_url_dblchoco_internal(url);
 
   let height = color.height();
   let width = color.width();
 
   let mut field = Field::new(&color, &clue);
-  field.trial_and_error(2);
+  let decided_flag = field.trial_and_error(depth);
 
-  assert_eq!(field.inconsistent(), false);
+  //assert_eq!(field.inconsistent(), false);
 
   let mut ans = "".to_string();
 
@@ -164,7 +170,12 @@ pub fn solve_dblchoco(url: &str) -> String {
       }
   }
 
-  ans
+  let payload = DblchocoSol {
+    sol: ans,
+    decided_flag: decided_flag
+  };
+
+  serde_json::to_string(&payload).unwrap()
 }
 
 /*
@@ -385,7 +396,10 @@ fn consume(index: &mut usize, i: &mut usize, j: &mut usize, width: usize, list: 
 }
 
 fn main() {
-  let url = "https://puzz.link/p?numlin/42/25/zzi1zx5j3ve-1cv-13n6zp-2br2zl-2cvep8-1dp-29z-10x7zj-14t-1dzn-16j-1abj-20zr-19l-21zv-1bh-1fzg2h6hbh-11hch-17l-22h-24h-27h-2ah-24h-1cj3h7hch-12h-16h-1al-14h-21h-23h-29h-26h-2cj4h8hdh9h-17h-12l-1fh-25h-28h-2bh-27h-10zgah-20zv-1bl-23zr-18j-18fj-22zn-15t-26zj-13x-25zfp-15-19p-11vazl4r9zp-2an5vd-1ev-1ej1zx-28zzi".to_string();
+  let url = "https://puzz.link/p?dbchoco/11/10/00333rpvsvufv3v0v07010i4i4j4h4g1h1l4k3o2q6o2g1i4i5u3i1t";
+  // https://puzz.link/p?dbchoco/8/8/1tkv17m0f4pheu1j2j6j62g2u3i1p (0 だとだめ 1 以上なら O)
 
-  parse_url_numlin(url);
+  let sol = solve_dblchoco(url, 1000);
+
+  println!("{:?}", sol);
 }

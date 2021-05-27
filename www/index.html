@@ -15,6 +15,12 @@
       #button {
         top: 20;
       }
+      a {
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
     </style>
   </head>
   <body>
@@ -22,11 +28,25 @@
     <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
     <p>
       とりあえずナンバーリンクかダブルチョコを解きます．めっちゃ問題が大きいと落ちます．<br />
-      ソルバーは semiexp さんのものを MIT License に基づき使用させていただきました．本許諾表示は下．問題があれば教えてください．
+      ソルバーは semiexp さんのものを MIT License に基づき使用させていただきました．本許諾表示は下．問題があれば教えてください．<br/>
+      <b>ご意見・感想は Twitter ハッシュタグ</b> <a target="_blank" href="https://twitter.com/search?q=%23puzz_sqr&src=typed_query" style="color: rgb(27, 149, 224)">#puzz_sqr</a> <b>にお寄せください．</b>
     </p>
+    <div>
+      変更点: 
+      <ul>
+        <li>解いている最中であることをボタンの「Now Solving...」で表示</li>
+        <li>計算時間を表示</li>
+        <li>未確定のものがある場合，その旨を表示し当該部分を赤い点線で表示</li>
+        <li>URL がぱずぷれ・puzz.link でない場合にはじく</li>
+        <li>未確定なものを試す試行回数を設定できるように</li>
+      </ul>
+    </div>
     <label>(ぱずぷれ or puzz.link) URL を入力してください: </label>
-    <input id="url-box" type="text"/>
+    <input id="url-box" type="text" /> <br />
+    <label>未確定の部分を探索する深さ</label>
+    <input id="depth-input" type="number" value="0" /> <br />
     <button id="button" onclick="click_handler()">Loading...</button>
+    <p id="info"></p>
     <div class="container">
       <canvas id="canvas" width="640" height="480"></canvas>
     </div>

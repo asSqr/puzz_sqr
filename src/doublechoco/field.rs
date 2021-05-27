@@ -584,15 +584,39 @@ impl Field {
             }
         }
     }
-    pub fn trial_and_error(&mut self, depth: i32) {
+    pub fn trial_and_error(&mut self, depth: i32) -> bool {
         let height = self.height();
         let width = self.width();
 
+        fn is_finished(border: &Grid<Border>, width: i32, height: i32) -> bool {
+            for y in 0..(height * 2 - 1) {
+                for x in 0..(width * 2 - 1) {
+                    if x%2 == y%2 {
+                        continue;
+                    }
+
+                    if border[LP(y, x)] == Border::Undecided {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
         if depth == 0 {
             self.solve();
-            return;
+            
+            if self.inconsistent() {
+                return false;
+            }
+
+            return is_finished(&self.border, width, height);
         }
-        self.trial_and_error(depth - 1);
+        
+        if self.trial_and_error(depth - 1) {
+            return true;
+        }
 
         loop {
             let mut updated = false;
@@ -608,23 +632,31 @@ impl Field {
                     {
                         let mut field_line = self.clone();
                         field_line.decide_border(pos, Border::Line);
-                        field_line.trial_and_error(depth - 1);
+                        if field_line.trial_and_error(depth - 1) {
+                            return true;
+                        }
 
                         if field_line.inconsistent() {
                             updated = true;
                             self.decide_border(pos, Border::Blank);
-                            self.trial_and_error(depth - 1);
+                            if self.trial_and_error(depth - 1) {
+                                return true;
+                            }
                         }
                     }
                     {
                         let mut field_blank = self.clone();
                         field_blank.decide_border(pos, Border::Blank);
-                        field_blank.trial_and_error(depth - 1);
+                        if field_blank.trial_and_error(depth - 1) {
+                            return true;
+                        }
 
                         if field_blank.inconsistent() {
                             updated = true;
                             self.decide_border(pos, Border::Line);
-                            self.trial_and_error(depth - 1);
+                            if self.trial_and_error(depth - 1) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -633,6 +665,8 @@ impl Field {
                 break;
             }
         }
+
+        return false;
     }
 }
 

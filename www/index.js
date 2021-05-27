@@ -24,22 +24,50 @@ const R = {
   },
 };
 
+const is_valid_url = url => {
+  let ret = false;
+
+  ret |= url.startsWith('https://puzz.link/p');
+  ret |= url.startsWith('http://pzv.jp/p.html');
+
+  return ret;
+};
+
+const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
+
 Promise.all([wasm]).then(async function([{ parse_url_dblchoco, solve_dblchoco, parse_url_numlin, solve_numlin }]) {
-  const button = document.getElementById('button');
+  document.getElementById('button').innerText = 'Solve it!!!';
 
-  button.innerText = 'Solve it!!!';
-
-  button.onclick = () => { 
+  button.onclick = async () => { 
     const input = document.getElementById('url-box');
     
     const url = input.value;
 
     const col_main = 'rgb(40,40,40)';
     const col_sol = 'rgb(0,160,0)';
+    const col_alert = 'rgb(160,0,0)';
 
-    if( url.indexOf('dbchoco') != -1 ) {
+    let infoDom = document.getElementById('info');
+
+    let button = document.getElementById('button');
+
+    button.innerText = 'Now Solving...';
+
+    await sleep(500);
+
+    if( url.startsWith('https://puzz.link/p') && url.indexOf('dbchoco') != -1 ) {
       const { color, clue, width, height } = JSON.parse(parse_url_dblchoco(url));
-      const sol = solve_dblchoco(url);
+
+      const depth = document.getElementById('depth-input').value;
+
+      const start = new Date();
+      const { sol, decided_flag } = JSON.parse(solve_dblchoco(url, depth));
+      const end = new Date();
+      const elapsedSec = (end-start) / 1000;
+
+      button.innerText = 'Solve it!!!';
+
+      infoDom.innerText = `実行時間: ${elapsedSec.toFixed(2)} s`;
 
       console.log({ color, clue, width, height });
 
@@ -104,21 +132,30 @@ Promise.all([wasm]).then(async function([{ parse_url_dblchoco, solve_dblchoco, p
       let row = 1, col = 0;
 
       for( let i = 0; i < sol.length; ++i ) {
-        if( sol[i] == '-' ) {
+        if( sol[i] != 'x' ) {
+          if( sol[i] == '-' ) {
+            ctx.strokeStyle = col_sol;
+            ctx.lineWidth = 4;
+          } else {
+            ctx.strokeStyle = col_alert;
+            ctx.lineWidth = 4;
+            ctx.setLineDash([12]);
+          }
+
           if( row % 2 == 0 ) {
             const y = pad + s*row/2;
             const x = pad + s*col;
 
-            ctx.strokeStyle = col_sol;
-            ctx.lineWidth = 4;
             R.line(ctx, x, y, x+s, y);
           } else {
             const y = pad + s*(row-1)/2;
             const x = pad + s*(col+1);
 
-            ctx.strokeStyle = col_sol;
-            ctx.lineWidth = 4;
             R.line(ctx, x, y, x, y+s);
+          }
+
+          if( sol[i] == ' ' ) {
+            ctx.setLineDash([]);
           }
         }
 
@@ -132,7 +169,11 @@ Promise.all([wasm]).then(async function([{ parse_url_dblchoco, solve_dblchoco, p
           ++row;
         }
       }
-    } else if( url.indexOf('numlin') != -1 ) {
+
+      if( !decided_flag ) {
+        infoDom.innerText += ' (未確定の境界があります)';
+      }
+    } else if( is_valid_url(url) && url.indexOf('numlin') != -1 ) {
       const { field, width, height } = JSON.parse(parse_url_numlin(url));
       const { sol } = JSON.parse(solve_numlin(url));
     
@@ -211,6 +252,9 @@ Promise.all([wasm]).then(async function([{ parse_url_dblchoco, solve_dblchoco, p
 
         R.line( ctx, calc(arc[0][1]) + hor*mar1, calc(arc[0][0]) + ver*mar1, calc(arc[1][1]) - hor*mar2, calc(arc[1][0]) - ver*mar2 );
       }
-    } 
+    } else {
+      button.innerText = 'Solve it!!!';
+      infoDom.innerText = '対応していない URL です';
+    }
   }
 });
